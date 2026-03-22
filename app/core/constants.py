@@ -1,0 +1,1 @@
+DIGEST_SIZE = 5

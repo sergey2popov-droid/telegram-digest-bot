@@ -1,0 +1,12 @@
+aiogram
+telethon
+sqlalchemy
+alembic
+psycopg2-binary
+pydantic
+pydantic-settings
+httpx
+feedparser
+rapidfuzz
+apscheduler
+python-dotenv

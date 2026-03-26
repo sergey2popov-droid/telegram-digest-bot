@@ -7,4 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV PYTHONPATH=/app
+
 CMD ["sh", "-c", "alembic upgrade head && python app/main.py"]

@@ -39,3 +39,9 @@ Thumbs.db
 htmlcov/
 *.session
 *.session-journal
+
+# Debug output files
+_debug_*.txt
+_sources.txt
+_valid_now.txt
+add_sources.py

@@ -2,6 +2,7 @@ aiogram
 telethon
 sqlalchemy
 alembic
+asyncpg
 psycopg2-binary
 pydantic
 pydantic-settings

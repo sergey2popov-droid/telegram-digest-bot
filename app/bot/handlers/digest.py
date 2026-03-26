@@ -10,5 +10,8 @@ _service = DigestService()
 
 @router.message(Command("digest"))
 async def cmd_digest(message: Message) -> None:
-    text = await _service.build()
-    await message.answer(text)
+    try:
+        text = await _service.build()
+        await message.answer(text, parse_mode="HTML")
+    except Exception as e:
+        await message.answer(f"Ошибка при сборке дайджеста: {type(e).__name__}: {e}")

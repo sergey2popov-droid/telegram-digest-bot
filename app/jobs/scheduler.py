@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 def build_scheduler() -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
 
-    # Сбор новостей из RSS — каждые 30 минут
+    # Сбор новостей из RSS — каждые 30 минут, первый запуск сразу
     scheduler.add_job(
         run_ingestion,
         trigger="interval",
@@ -20,6 +21,7 @@ def build_scheduler() -> AsyncIOScheduler:
         id="ingestion",
         name="RSS ingestion",
         replace_existing=True,
+        next_run_time=datetime.now(timezone.utc),
     )
 
     # Отправка дайджеста — каждый день в 10:00 по Москве

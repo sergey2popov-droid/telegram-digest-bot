@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.dtos import ItemDTO
 
-MAX_ARTICLE_AGE_DAYS = 2
+MAX_ARTICLE_AGE_DAYS = 1
 
 
 TOPIC_WORDS = [

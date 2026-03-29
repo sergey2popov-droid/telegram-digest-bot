@@ -111,13 +111,38 @@ def _is_russian(title: str) -> bool:
 _NAMED_PERSON_RE = re.compile(
     r"^([А-ЯЁ][а-яёА-ЯЁ\-]+[\s\u00a0]){0,2}[А-ЯЁ][а-яёА-ЯЁ\-]+"
     r"(\s*[:\—]"
-    r"|[\s\u00a0]+(рассказал|заявил|сообщил|признался|объяснил|высказался|"
+    r"|[\s\u00a0]+(не\s+)?(рассказал|заявил|сообщил|признался|объяснил|высказался|"
     r"ответил|прокомментировал|назвал|поделился|отметил|добавил|"
     r"уточнил|подчеркнул|призвал|пообещал|опроверг|раскрыл|выразил|"
     r"выглядел|оказался|стал|был|показался|появился|прилетел|вернулся|"
-    r"встретился|победил|проиграл|выступил|сыграл|забил|подписал|поставил)(а|и)?"
+    r"встретился|победил|проиграл|выступил|сыграл|забил|подписал|поставил|"
+    r"говорит|рассказывает|признает|признала|признал|плачет|рыдает|"
+    r"может|хочет|боится|страдает|борется|скончался|умер|госпитализирован)(а|и)?"
     r")"
 )
+
+# Diseases/syndromes named after people — allowed despite two capitalized words
+_MEDICAL_EPONYMS = frozenset({
+    "альцгеймера", "паркинсона", "дауна", "хашимото", "крона", "бехтерева",
+    "альцгеймер", "паркинсон", "пирогова", "боткина", "склифосовского",
+    "бехтерев", "базедова", "меньера",
+})
+
+# Two consecutive capitalized Russian words (4+ chars each) — signals Name Surname
+_INNER_TWO_NAMES_RE = re.compile(r"[А-ЯЁ][а-яё]{3,}\s+[А-ЯЁ][а-яё]{3,}")
+
+# Words indicating entertainment/celebrity context
+_CELEBRITY_SIGNAL_WORDS = [
+    "фигурист",    # фигуристка, фигурист
+    "поклонник",   # поклонники (фанаты)
+    "певиц",       # певица
+    "актрис",      # актриса
+    "телеведущ",   # телеведущая
+    "блогер",
+    "инфлюэнсер",
+    "шоумен",
+    "папарацц",
+]
 
 _HEALTH_EXPERT_ROLES = {
     "врач", "врачи", "диетолог", "нутрициолог", "кардиолог", "психолог",
@@ -162,24 +187,48 @@ _QUOTE_PREFIX_RE = re.compile(r'^«[^»]*»\s*[:\—]\s*')
 _TWO_NAMES_RE = re.compile(r'^[А-ЯЁ][а-яёА-ЯЁ\-]+\s+[А-ЯЁ][а-яёА-ЯЁ\-]+[\s,]')
 
 
+def _has_inner_name_pair(title: str) -> bool:
+    """Detect 'Имя Фамилия' anywhere inside the title, skipping medical eponyms."""
+    for match in _INNER_TWO_NAMES_RE.finditer(title):
+        words_in_match = match.group().lower().split()
+        if any(w in _MEDICAL_EPONYMS for w in words_in_match):
+            continue
+        return True
+    return False
+
+
+def _has_celebrity_signal(title: str) -> bool:
+    """Detect entertainment/celebrity context words anywhere in the title."""
+    tokens = re.split(r"[^\w]", title.lower())
+    return any(
+        token.startswith(word)
+        for token in tokens
+        for word in _CELEBRITY_SIGNAL_WORDS
+    )
+
+
 def _is_named_person_news(title: str) -> bool:
-    # Strip leading «quote»: block before checking
     stripped = _QUOTE_PREFIX_RE.sub('', title).strip()
     if not stripped:
         return False
     words = stripped.split()
     first_word = words[0].lower().rstrip(".,:")
     if first_word in _HEALTH_EXPERT_ROLES:
-        # "Врач Фамилия глагол" — разрешаем (эксперт с фамилией даёт совет)
-        # "Психолог Имя Фамилия глагол" — запрещаем (полное имя = celebrity gossip)
+        # "Врач Фамилия" — разрешаем; "Психолог Имя Фамилия" — запрещаем
         if len(words) >= 3 and words[1][0].isupper() and words[2][0].isupper():
             return True
         return False
-    # Two consecutive capitalized words at start = Name Surname
+    # Имя Фамилия в начале заголовка
     if _TWO_NAMES_RE.match(stripped):
         return True
-    # Name + speech verb at start
+    # Имя + глагол в начале ("Лерчек не может...", "Иванов рассказал...")
     if _NAMED_PERSON_RE.match(stripped):
+        return True
+    # Имя Фамилия в середине ("Похудевшую Светлану Пермякову...")
+    if _has_inner_name_pair(stripped):
+        return True
+    # Контекстные слова знаменитостей ("фигуристку Синицину...")
+    if _has_celebrity_signal(stripped):
         return True
     return False
 

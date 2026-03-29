@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.dtos import ItemDTO
 
-MAX_ARTICLE_AGE_DAYS = 1
+MAX_ARTICLE_AGE_DAYS = 2  # safety net for very old articles; freshness is enforced by fetched_at in loader
 
 
 TOPIC_WORDS = [

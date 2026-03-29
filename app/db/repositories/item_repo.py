@@ -40,9 +40,13 @@ class ItemRepo:
         return ItemDTO.model_validate(item)
 
     async def get_recent_24h(self) -> list[ItemDTO]:
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff_fetch = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff_publish = datetime.now(timezone.utc) - timedelta(days=3)
         result = await self._session.execute(
-            select(Item).where(Item.fetched_at >= cutoff)
+            select(Item).where(
+                Item.fetched_at >= cutoff_fetch,
+                (Item.published_at >= cutoff_publish) | (Item.published_at.is_(None)),
+            )
         )
         return [ItemDTO.model_validate(row) for row in result.scalars().all()]
 

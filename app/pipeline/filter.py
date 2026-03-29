@@ -1,34 +1,77 @@
 import re
-from datetime import datetime, timedelta, timezone
-
 from app.core.dtos import ItemDTO
 
-MAX_ARTICLE_AGE_DAYS = 2  # safety net for very old articles; freshness is enforced by fetched_at in loader
+# Article age is enforced in the DB query (loader), not here.
 
 
 TOPIC_WORDS = [
-    # Здоровье / медицина
+    # Здоровье / медицина (общее)
     "здоров",
     "болезн",
     "лечен",
     "лекарств",
     "аллерг",
     "витамин",
-    "иммунит",
+    "иммун",        # иммунитет, иммунная система
     "профилакт",
     "онколог",
     "симптом",
     "врач",
     "имплант",
+    "медицин",      # медицина, медицинский
+    "операц",       # операция
+    "вакцин",       # вакцина, вакцинация
+    "прививк",      # прививка
+    "обследован",   # обследование
+    "анализ",       # анализы крови и т.п.
+    "диагноз",
+    "реабилитац",   # реабилитация
+    # Конкретные болезни и состояния
+    "диабет",
+    "гипертон",     # гипертония
+    "инфаркт",
+    "инсульт",
+    "артрит",
+    "астм",         # астма
+    "ковид",
+    "грипп",
+    "рак",          # рак, раковый
+    "аритми",       # аритмия
+    "тромб",        # тромб, тромбоз
+    "анеми",        # анемия
+    "ожирен",       # ожирение
+    "депресси",     # депрессия
+    "деменци",      # деменция
+    "аутоиммун",    # аутоиммунный
+    # Органы и системы
+    "сердц",        # сердце, сердечный
+    "печен",        # печень
+    "кишечн",       # кишечник
+    "желудк",       # желудок
+    "сустав",       # суставы
+    "позвоночн",    # позвоночник
+    "давлен",       # давление (кровяное)
+    "холестер",     # холестерин
+    "гормон",       # гормоны, гормональный
+    "сосуд",        # сосуды, сосудистый
+    "кров",         # кровь, кровяной
+    "щитовидн",     # щитовидная железа
     # Питание
     "питан",
     "диет",
     "нутрици",
     "углевод",
-    "белок",
+    "белк",         # белки, белков (белок не покрывал падежи)
     "рецепт",
     "калор",
     "метабол",
+    "клетчатк",     # клетчатка
+    "сахар",        # сахар (кровяной)
+    "кальци",       # кальций
+    "магни",        # магний
+    "омег",         # омега-3
+    "жир",          # жиры, жирный
+    "антиоксид",    # антиоксиданты
     # ЗОЖ / тело
     "зож",
     "фитнес",
@@ -36,16 +79,28 @@ TOPIC_WORDS = [
     "похуд",
     "осанк",
     "сутулост",
+    "закалив",      # закаливание
+    "долголети",    # долголетие
     # Спорт (только фитнес / любительский)
     "ходьб",
     "бег",
     "плаван",
-    # Психология
+    "йог",          # йога
+    "упражнен",     # упражнение
+    "растяжк",      # растяжка
+    # Психология и сон
     "психолог",
     "стресс",
     "тревог",
-    # Сон
     "сон",
+    "бессонниц",    # бессонница
+    "выгоран",      # выгорание
+    # Симптомы
+    "кашел",        # кашель
+    "насморк",
+    "температур",   # температура тела
+    "усталост",
+    "боль",         # боль, болит
 ]
     
 
@@ -146,17 +201,14 @@ def filter_valid(items: list[ItemDTO]) -> list[ItemDTO]:
     log = logging.getLogger(__name__)
 
     result: list[ItemDTO] = []
-    max_age_cutoff = datetime.now(timezone.utc) - timedelta(days=MAX_ARTICLE_AGE_DAYS)
 
-    c_title = c_url = c_age = c_russian = c_person = c_political = c_topic = 0
+    c_title = c_url = c_russian = c_person = c_political = c_topic = 0
 
     for item in items:
         if not item.title:
             c_title += 1; continue
         if not item.url:
             c_url += 1; continue
-        if item.published_at and item.published_at < max_age_cutoff:
-            c_age += 1; continue
         if not _is_russian(item.title):
             c_russian += 1; continue
         if _is_named_person_news(item.title):
@@ -168,7 +220,7 @@ def filter_valid(items: list[ItemDTO]) -> list[ItemDTO]:
         result.append(item)
 
     log.info(
-        "Filter: in=%d out=%d | dropped: no_title=%d no_url=%d age=%d not_ru=%d person=%d political=%d topic=%d",
-        len(items), len(result), c_title, c_url, c_age, c_russian, c_person, c_political, c_topic,
+        "Filter: in=%d out=%d | dropped: no_title=%d no_url=%d not_ru=%d person=%d political=%d topic=%d",
+        len(items), len(result), c_title, c_url, c_russian, c_person, c_political, c_topic,
     )
     return result

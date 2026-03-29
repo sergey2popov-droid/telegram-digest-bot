@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.dtos import ItemDTO
 
-MAX_ARTICLE_AGE_DAYS = 7
+MAX_ARTICLE_AGE_DAYS = 2
 
 
 TOPIC_WORDS = [
@@ -105,6 +105,8 @@ def _is_political_legal(title: str) -> bool:
 
 _QUOTE_PREFIX_RE = re.compile(r'^«[^»]*»\s*[:\—]\s*')
 _TWO_NAMES_RE = re.compile(r'^[А-ЯЁ][а-яёА-ЯЁ\-]+\s+[А-ЯЁ][а-яёА-ЯЁ\-]+[\s,]')
+# Two consecutive capitalized Russian words (4+ chars each) anywhere in title
+_INNER_TWO_NAMES_RE = re.compile(r'[А-ЯЁ][а-яё]{3,}\s+[А-ЯЁ][а-яё]{3,}')
 
 
 def _is_named_person_news(title: str) -> bool:
@@ -120,10 +122,16 @@ def _is_named_person_news(title: str) -> bool:
         if len(words) >= 3 and words[1][0].isupper() and words[2][0].isupper():
             return True
         return False
-    # Two consecutive capitalized words = Name Surname → celebrity news
+    # Two consecutive capitalized words at start = Name Surname
     if _TWO_NAMES_RE.match(stripped):
         return True
-    return bool(_NAMED_PERSON_RE.match(stripped))
+    # Name + speech verb at start
+    if _NAMED_PERSON_RE.match(stripped):
+        return True
+    # Two consecutive capitalized words anywhere inside title = "Как Алла Пугачева похудела"
+    if _INNER_TWO_NAMES_RE.search(stripped):
+        return True
+    return False
 
 
 def _is_topic_match(title: str) -> bool:

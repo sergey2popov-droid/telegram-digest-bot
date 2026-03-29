@@ -142,25 +142,33 @@ def _is_topic_match(title: str) -> bool:
 
 
 def filter_valid(items: list[ItemDTO]) -> list[ItemDTO]:
+    import logging
+    log = logging.getLogger(__name__)
+
     result: list[ItemDTO] = []
     max_age_cutoff = datetime.now(timezone.utc) - timedelta(days=MAX_ARTICLE_AGE_DAYS)
 
+    c_title = c_url = c_age = c_russian = c_person = c_political = c_topic = 0
+
     for item in items:
         if not item.title:
-            continue
+            c_title += 1; continue
         if not item.url:
-            continue
+            c_url += 1; continue
         if item.published_at and item.published_at < max_age_cutoff:
-            continue
+            c_age += 1; continue
         if not _is_russian(item.title):
-            continue
+            c_russian += 1; continue
         if _is_named_person_news(item.title):
-            continue
+            c_person += 1; continue
         if _is_political_legal(item.title):
-            continue
+            c_political += 1; continue
         if not _is_topic_match(item.title):
-            continue
-
+            c_topic += 1; continue
         result.append(item)
 
+    log.info(
+        "Filter: in=%d out=%d | dropped: no_title=%d no_url=%d age=%d not_ru=%d person=%d political=%d topic=%d",
+        len(items), len(result), c_title, c_url, c_age, c_russian, c_person, c_political, c_topic,
+    )
     return result

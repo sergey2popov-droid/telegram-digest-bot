@@ -105,8 +105,6 @@ def _is_political_legal(title: str) -> bool:
 
 _QUOTE_PREFIX_RE = re.compile(r'^«[^»]*»\s*[:\—]\s*')
 _TWO_NAMES_RE = re.compile(r'^[А-ЯЁ][а-яёА-ЯЁ\-]+\s+[А-ЯЁ][а-яёА-ЯЁ\-]+[\s,]')
-# Two consecutive capitalized Russian words (4+ chars each) anywhere in title
-_INNER_TWO_NAMES_RE = re.compile(r'[А-ЯЁ][а-яё]{3,}\s+[А-ЯЁ][а-яё]{3,}')
 
 
 def _is_named_person_news(title: str) -> bool:
@@ -127,9 +125,6 @@ def _is_named_person_news(title: str) -> bool:
         return True
     # Name + speech verb at start
     if _NAMED_PERSON_RE.match(stripped):
-        return True
-    # Two consecutive capitalized words anywhere inside title = "Как Алла Пугачева похудела"
-    if _INNER_TWO_NAMES_RE.search(stripped):
         return True
     return False
 

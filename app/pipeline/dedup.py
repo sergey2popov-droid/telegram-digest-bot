@@ -4,7 +4,7 @@ from rapidfuzz import fuzz
 
 from app.core.dtos import ItemDTO
 
-DEDUP_RATIO_THRESHOLD = 38
+DEDUP_RATIO_THRESHOLD = 70
 
 
 def _content_stems(title: str) -> set[str]:
